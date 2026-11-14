@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="only light">
+<title>Air Painter | Marvarid (PearlyMe)</title>
+<meta name="description" content="Draw in the air with your finger. Hand tracking runs in your browser, nothing is uploaded.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Press+Start+2P&display=swap" rel="stylesheet">
+<meta name="darkreader-lock">
+<style>
+
+.sky {
+  position: fixed; inset: 0; z-index: -1; overflow: hidden; pointer-events: none;
+  background: linear-gradient(165deg, #ffe3f2 0%, #f2e2ff 38%, #dcebff 72%, #cde8ff 100%);
+}
+.sky .blob {
+  position: absolute; border-radius: 50%; filter: blur(70px); opacity: .55;
+  animation: drift 28s ease-in-out infinite alternate;
+}
+.sky .b1 { width: 46vmax; height: 46vmax; left: -12vmax; top: -10vmax; background: #ffb8dc; }
+.sky .b2 { width: 42vmax; height: 42vmax; right: -14vmax; top: 18vh; background: #cfa8ff; animation-duration: 34s; }
+.sky .b3 { width: 50vmax; height: 50vmax; left: 10vw; bottom: -24vmax; background: #9fd3ff; animation-duration: 40s; }
+@keyframes drift { to { transform: translate(4vmax, 3vmax) scale(1.08); } }
+
+.sky .star {
+  position: absolute; border-radius: 50%; background: #fff;
+  box-shadow: 0 0 6px 1px rgba(255, 255, 255, .9);
+  animation: twinkle var(--d, 4s) ease-in-out var(--delay, 0s) infinite;
+}
+.sky .spark {
+  position: absolute; width: var(--s, 14px); height: var(--s, 14px);
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='white' d='M12 0c.8 6.2 5.8 11.2 12 12-6.2.8-11.2 5.8-12 12-.8-6.2-5.8-11.2-12-12C6.2 11.2 11.2 6.2 12 0z'/%3E%3C/svg%3E") center / contain no-repeat;
+  filter: drop-shadow(0 0 4px rgba(255, 255, 255, .95)) drop-shadow(0 0 8px var(--glow, rgba(255, 150, 210, .7)));
+  animation: twinkle var(--d, 5s) ease-in-out var(--delay, 0s) infinite;
+}
+@keyframes twinkle { 0%, 100% { opacity: .25; transform: scale(.75); } 50% { opacity: 1; transform: scale(1.15); } }
+
+.sky .shoot {
+  position: absolute; top: 12%; left: -160px; width: 130px; height: 2px; border-radius: 2px; opacity: 0;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0), #fff);
+  box-shadow: 0 0 8px 1px rgba(255, 255, 255, .8);
+  animation: shoot 16s linear 3s infinite;
+}
+@keyframes shoot {
+  0% { transform: translate(0, 0) rotate(24deg); opacity: 0; }
+  2% { opacity: 1; }
+  9% { transform: translate(75vw, 34vh) rotate(24deg); opacity: 0; }
+  100% { transform: translate(75vw, 34vh) rotate(24deg); opacity: 0; }
+}
+
+/* sparkle dust that follows a mouse pointer */
+.dust {
+  position: fixed; z-index: 9; width: 9px; height: 9px; pointer-events: none; margin: -4px 0 0 -4px;
+  background: var(--h, #ff9fd0); border-radius: 50%; box-shadow: 0 0 8px 2px var(--h, #ff9fd0);
+  animation: dust .8s ease-out forwards;
+}
+@keyframes dust { to { opacity: 0; transform: translateY(16px) scale(.2); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .sky *, .dust { animation: none !important; }
+  .sky .star, .sky .spark { opacity: .8; }
+}
+
+:root { color-scheme: only light; --ink:#3b2f63; --muted:#6a5f8c; --pink:#ff8fc7; --purple:#8a63d2; --card:rgba(255,255,255,.7); --edge:rgba(255,255,255,.9); --px:"Press Start 2P", ui-monospace, "Courier New", monospace; }
+* { box-sizing: border-box; }
+body { margin:0; min-height:100vh; padding:24px 14px 56px; color:var(--ink); background:#f2e2ff; font-family:"Nunito", system-ui, sans-serif; font-size:1.02rem; line-height:1.6; display:flex; flex-direction:column; align-items:center; }
+.page { width:100%; max-width:1000px; }
+a { color:var(--purple); text-underline-offset:3px; }
+.card { background:var(--card); border:1px solid var(--edge); border-radius:24px; padding:22px 26px; margin-bottom:22px; box-shadow:0 14px 40px rgba(138,99,210,.18); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px); }
+.hero { text-align:center; }
+.back { display:inline-block; margin-bottom:10px; font-weight:700; font-size:.9rem; text-decoration:none; background:rgba(255,255,255,.85); border:1px solid var(--edge); padding:5px 14px; border-radius:999px; }
+h1 { margin:0 0 8px; font-size:clamp(1.6rem,5vw,2.4rem); font-weight:800; background:linear-gradient(90deg,#f06fb4,#8a63d2 50%,#4fa8ee); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; }
+.hero p { margin:0 auto; max-width:640px; color:var(--muted); }
+h2 { margin:0 0 10px; font-size:1.3rem; }
+.stagewrap { position:relative; border-radius:6px; overflow:hidden; background:#fff; box-shadow:0 0 22px rgba(255,159,208,.55), 0 0 60px rgba(143,208,255,.45); }
+canvas { display:block; width:100%; height:auto; touch-action:none; background:#fff; }
+.cover { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px; text-align:center; padding:20px; background:rgba(255,240,250,.72); backdrop-filter:blur(3px); }
+.cover[hidden] { display:none; }
+.cover p { margin:0; max-width:460px; color:var(--ink); }
+.btn { font:inherit; font-weight:800; cursor:pointer; border:0; color:#fff; background:linear-gradient(135deg,#ff9fd0,#a98bef); padding:12px 24px; border-radius:14px; box-shadow:0 5px 0 #8a63d2; }
+.btn:hover { transform:translateY(2px); box-shadow:0 3px 0 #8a63d2; }
+.btn:disabled { opacity:.6; cursor:wait; }
+.linkbtn { font:inherit; background:none; border:0; color:var(--purple); text-decoration:underline; cursor:pointer; }
+.err { color:#b0306a; font-weight:700; }
+.legend { display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:10px; margin-top:16px; }
+.legend div { background:rgba(255,255,255,.75); border-radius:14px; padding:10px 14px; font-size:.92rem; }
+.legend b { display:block; font-family:var(--px); font-size:.62rem; color:var(--purple); margin-bottom:4px; line-height:1.6; }
+#gallery { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:14px; }
+#gallery .cap { background:#fff; border-radius:14px; padding:8px; box-shadow:0 6px 16px rgba(138,99,210,.18); font-size:.85rem; }
+#gallery img, #gallery video { width:100%; border-radius:8px; display:block; }
+#gallery a { display:inline-block; margin-top:6px; font-weight:800; }
+.empty { color:var(--muted); margin:0; }
+footer.card { text-align:center; } footer p { margin:0 0 4px; }
+@media (max-width:560px) { .card { padding:18px 16px; border-radius:20px; } }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header class="hero card">
+    <a class="back" href="https://pearlm-457.github.io/Computer_Vision_Projects/">&larr; Computer Vision Projects</a>
+    <h1>Air Painter</h1>
+    <p>Draw in the air with your index finger. Hand tracking runs right in your browser, and your camera video never leaves your device.</p>
+  </header>
+
+  <section class="card">
+    <div class="stagewrap">
+      <canvas id="cv" width="960" height="540" aria-label="Air Painter canvas"></canvas>
+      <div class="cover" id="cover">
+        <button class="btn" id="start" type="button">&#9654; Start camera</button>
+        <p id="msg">Allow the camera when your browser asks. Hold your hand up so it can see your fingers.</p>
+        <button class="linkbtn" id="nocam" type="button">No camera? Draw with your mouse or finger instead</button>
+      </div>
+    </div>
+    <div class="legend">
+      <div><b>INDEX FINGER</b>Draw</div>
+      <div><b>2 FINGERS</b>Pick a colour or press a button</div>
+      <div><b>OPEN PALM</b>Erase under your hand</div>
+      <div><b>FIST (HOLD)</b>Clear everything</div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>My captures</h2>
+    <div id="gallery"><p class="empty" id="empty">Press PHOTO, REC or SAVE in the top bar. Your captures show up here, and you can download them.</p></div>
+  </section>
+
+  <section class="card">
+    <h2>How it works</h2>
+    <p>MediaPipe finds 21 points on your hand in every video frame. The code checks which fingers are up to decide whether you are drawing, picking, erasing or clearing. With SNAP on, a rough circle, rectangle, triangle or straight line turns into a clean shape. Anything else, like a flower, stays exactly as you drew it.</p>
+    <p>The tracking library and a small hand model (about 8 MB) download from jsDelivr and Google when you press Start. Your camera video is processed on your device and is not uploaded. Get the <a href="https://github.com/PearlM-457/Computer_Vision_Projects/tree/main/01-hand-tracking" target="_blank" rel="noopener">Python version and code</a>.</p>
+  </section>
+
+  <footer class="card">
+    <p>Built with curiosity, patience, and a lot of trial and error.</p>
+    <p>Marvarid (PearlyMe) &nbsp;&middot;&nbsp; <a href="https://pearlm-457.github.io/">Home</a> &nbsp;&middot;&nbsp; <a href="https://github.com/PearlM-457" target="_blank" rel="noopener">GitHub</a></p>
+  </footer>
+</div>
+
+<video id="cam" playsinline muted style="display:none"></video>
+
+<script>
+(function () {
+  if (document.querySelector(".sky")) return;
+  var small = innerWidth < 700;
+  var sky = document.createElement("div");
+  sky.className = "sky";
+  sky.setAttribute("aria-hidden", "true");
+  sky.innerHTML = '<i class="blob b1"></i><i class="blob b2"></i><i class="blob b3"></i><i class="shoot"></i>';
+
+  var i, el, r = Math.random;
+  for (i = 0; i < (small ? 45 : 95); i++) {          // tiny stars
+    el = document.createElement("i");
+    el.className = "star";
+    var s = r() * 2.2 + 1;
+    el.style.cssText = "left:" + r() * 100 + "%;top:" + r() * 100 + "%;width:" + s + "px;height:" + s + "px;" +
+      "--d:" + (3 + r() * 4) + "s;--delay:-" + r() * 6 + "s";
+    sky.appendChild(el);
+  }
+  var glows = ["rgba(255,150,210,.75)", "rgba(180,150,255,.75)", "rgba(130,200,255,.8)"];
+  for (i = 0; i < (small ? 7 : 14); i++) {            // 4-point sparkles
+    el = document.createElement("i");
+    el.className = "spark";
+    el.style.cssText = "left:" + r() * 96 + "%;top:" + r() * 96 + "%;--s:" + (10 + r() * 14) + "px;" +
+      "--d:" + (4 + r() * 4) + "s;--delay:-" + r() * 6 + "s;--glow:" + glows[i % 3];
+    sky.appendChild(el);
+  }
+  document.body.prepend(sky);
+
+  if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  var last = 0, colors = ["#ff9fd0", "#b9a0ff", "#8fd0ff"], n = 0;
+  addEventListener("pointermove", function (e) {      // dust trail, mouse only
+    if (e.pointerType !== "mouse") return;
+    var t = performance.now();
+    if (t - last < 70) return;
+    last = t;
+    var d = document.createElement("i");
+    d.className = "dust";
+    d.style.left = e.clientX + "px";
+    d.style.top = e.clientY + "px";
+    d.style.setProperty("--h", colors[n++ % 3]);
+    document.body.appendChild(d);
+    d.addEventListener("animationend", function () { d.remove(); });
+  }, { passive: true });
+})();
+
+</script>
+<script>
+(function () {
+"use strict";
+var VISION = "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14";
+var MODEL = "https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task";
+
+var COLORS = [["PINK", "#ffb3d9"], ["SKY", "#8fd0ff"], ["LILAC", "#c3a6ff"]];
+var HOT = "#ff8fc7", DEEP = "#d0489a", INK = "#3b2f63", YEL = "#ffe27a", MINT = "#8ce6aa", RED = "#eb4646", SKY = "#8fd0ff", LILAC = "#c3a6ff";
+var CONN = [[0,1],[1,2],[2,3],[3,4],[0,5],[5,6],[6,7],[7,8],[5,9],[9,10],[10,11],[11,12],[9,13],[13,14],[14,15],[15,16],[13,17],[17,18],[18,19],[19,20],[0,17]];
+var PX = '"Press Start 2P", ui-monospace, monospace', SANS = 'Nunito, system-ui, sans-serif';
+
+var cv = document.getElementById("cv"), ctx = cv.getContext("2d");
+var video = document.getElementById("cam");
+var ink = document.createElement("canvas"), tmp = document.createElement("canvas"), ictx, tctx;
+var W = 960, H = 540, L, brush = 9;
+var P = { color: COLORS[0][1], pts: [] };
+var landmarker = null, camOn = false, snapOn = true;
+var smooth = null, hist = [], stable = "none", fistSince = null, fistDone = false, lastVT = -1;
+var cooldown = {}, toast = "", toastUntil = 0, flashUntil = 0, wantPhoto = false, wantSave = false;
+var rec = null, recChunks = [], recStart = 0, ptr = { down: false };
+var hand = null, gesture = "none", cursor = null, palm = null, progress = 0;
+
+/* ---------------- layout (arcade frame + top bar) ---------------- */
+function makeLayout(w, h) {
+  var B = Math.max(8, Math.round(w / 80)), pad = B, gap = Math.max(8, Math.round(w / 90));
+  var strip = Math.max(28, Math.round(h * 0.06)) + B, items = [], x0 = B * 3 + 10, xr = w - B * 3 - 10, i, x;
+  var btns = [["SNAP", "shape"], ["PHOTO", "photo"], ["REC", "rec"], ["SAVE", "save"], ["CLEAR", "clear"]];
+  var ih, bar;
+  if (w >= 700) {
+    bar = Math.max(76, Math.round(h * 0.15)); var y0 = B + pad; ih = bar - y0 - pad; x = x0;
+    for (i = 0; i < 3; i++) { items.push({ name: COLORS[i][0], kind: "color", color: COLORS[i][1], r: [x, y0, x + ih, y0 + ih] }); x += ih + gap; }
+    x += gap * 2; var bw = Math.max(86, Math.round(w * 0.105));
+    btns.forEach(function (b) { items.push({ name: b[0], kind: b[1], r: [x, y0, x + bw, y0 + ih] }); x += bw + gap; });
+  } else {
+    ih = Math.max(38, Math.round(w * 0.085)); var ya = B + pad, yb = ya + ih + gap; bar = yb + ih + pad; x = x0;
+    for (i = 0; i < 3; i++) { items.push({ name: COLORS[i][0], kind: "color", color: COLORS[i][1], r: [x, ya, x + ih, ya + ih] }); x += ih + gap; }
+    var wa = (xr - x - gap) / 2; items.push({ name: "SNAP", kind: "shape", r: [x, ya, x + wa, ya + ih] }); x += wa + gap;
+    items.push({ name: "CLEAR", kind: "clear", r: [x, ya, xr, ya + ih] });
+    var wb = (xr - x0 - 2 * gap) / 3; x = x0;
+    [["PHOTO", "photo"], ["REC", "rec"], ["SAVE", "save"]].forEach(function (b) { items.push({ name: b[0], kind: b[1], r: [x, yb, x + wb, yb + ih] }); x += wb + gap; });
+  }
+  return { B: B, bar: bar, strip: strip, ih: ih, items: items };
+}
+function hit(x, y) {
+  for (var i = 0; i < L.items.length; i++) { var r = L.items[i].r; if (x >= r[0] && x <= r[2] && y >= r[1] && y <= r[3]) return L.items[i]; }
+  return null;
+}
+function resize(w, h) {
+  W = cv.width = w; H = cv.height = h; ink.width = tmp.width = w; ink.height = tmp.height = h;
+  ictx = ink.getContext("2d"); tctx = tmp.getContext("2d"); L = makeLayout(w, h);
+  brush = Math.max(6, Math.round(w * 0.0095)); P.pts = [];
+}
+resize(960, 540);
+
+/* ---------------- gestures ---------------- */
+function fingersUp(lm) { return [8, 12, 16, 20].map(function (t) { return lm[t].y < lm[t - 2].y; }); }
+function classify(lm) {
+  var f = fingersUp(lm), a = f[0], b = f[1], c = f[2], d = f[3];
+  if (a && b && c && d) return "erase";
+  if (a && !(b || c || d)) return "draw";
+  if (a && b && !(c || d)) return "select";
+  if (!(a || b || c || d)) return "clear";
+  return "hover";
+}
+function pushGesture(g) { hist.push(g); if (hist.length > 3) hist.shift(); if (hist.length === 3 && hist[0] === hist[1] && hist[1] === hist[2]) stable = g; return stable; }
+
+/* ---------------- shape snapping ---------------- */
+function D(a, b) { return Math.hypot(a[0] - b[0], a[1] - b[1]); }
+function plen(p, closed) { var s = 0, i; for (i = 1; i < p.length; i++) s += D(p[i - 1], p[i]); if (closed) s += D(p[p.length - 1], p[0]); return s; }
+function parea(p) { var s = 0, i; for (i = 0; i < p.length; i++) { var a = p[i], b = p[(i + 1) % p.length]; s += a[0] * b[1] - b[0] * a[1]; } return Math.abs(s) / 2; }
+function pdist(p, a, b) { var dx = b[0] - a[0], dy = b[1] - a[1], l = Math.hypot(dx, dy); return l === 0 ? D(p, a) : Math.abs(dy * p[0] - dx * p[1] + b[0] * a[1] - b[1] * a[0]) / l; }
+function resample(p, n) {
+  var step = plen(p, false) / (n - 1), out = [p[0]], d = 0, prev = p[0], i, cur, seg, t, q;
+  for (i = 1; i < p.length; i++) {
+    cur = p[i]; seg = D(prev, cur);
+    while (d + seg >= step && seg > 0) { t = (step - d) / seg; q = [prev[0] + t * (cur[0] - prev[0]), prev[1] + t * (cur[1] - prev[1])]; out.push(q); prev = q; seg = D(prev, cur); d = 0; }
+    d += seg; prev = cur;
+  }
+  while (out.length < n) out.push(p[p.length - 1]);
+  return out.slice(0, n);
+}
+function hull(pts) {
+  var p = pts.map(function (q) { return [q[0], q[1]]; }).sort(function (a, b) { return a[0] - b[0] || a[1] - b[1]; });
+  function cr(o, a, b) { return (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]); }
+  var lo = [], up = [], i, q;
+  for (i = 0; i < p.length; i++) { q = p[i]; while (lo.length >= 2 && cr(lo[lo.length - 2], lo[lo.length - 1], q) <= 0) lo.pop(); lo.push(q); }
+  for (i = p.length - 1; i >= 0; i--) { q = p[i]; while (up.length >= 2 && cr(up[up.length - 2], up[up.length - 1], q) <= 0) up.pop(); up.push(q); }
+  up.pop(); lo.pop(); return lo.concat(up);
+}
+function rdp(p, eps) {
+  if (p.length < 3) return p;
+  var dm = 0, ix = 0, i, d; for (i = 1; i < p.length - 1; i++) { d = pdist(p[i], p[0], p[p.length - 1]); if (d > dm) { dm = d; ix = i; } }
+  if (dm > eps) { var l = rdp(p.slice(0, ix + 1), eps), r = rdp(p.slice(ix), eps); return l.slice(0, -1).concat(r); }
+  return [p[0], p[p.length - 1]];
+}
+function simplifyClosed(h, eps) {
+  var far = 0, dm = 0, i, d; for (i = 1; i < h.length; i++) { d = D(h[0], h[i]); if (d > dm) { dm = d; far = i; } }
+  var a = rdp(h.slice(0, far + 1), eps), b = rdp(h.slice(far).concat([h[0]]), eps);
+  var v = a.slice(0, -1).concat(b.slice(0, -1)), again = true;
+  while (again && v.length > 3) {                         /* drop vertices that sit on a straight edge */
+    again = false; var mi = -1, md = eps;
+    for (i = 0; i < v.length; i++) { d = pdist(v[i], v[(i + v.length - 1) % v.length], v[(i + 1) % v.length]); if (d < md) { md = d; mi = i; } }
+    if (mi >= 0) { v.splice(mi, 1); again = true; }
+  }
+  return v;
+}
+function rectAt(h, ang) {
+  var c = Math.cos(-ang), s = Math.sin(-ang), x0 = 1e9, x1 = -1e9, y0 = 1e9, y1 = -1e9, i, x, y;
+  for (i = 0; i < h.length; i++) { x = h[i][0] * c - h[i][1] * s; y = h[i][0] * s + h[i][1] * c; x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y); }
+  return { area: (x1 - x0) * (y1 - y0), ang: ang, x0: x0, x1: x1, y0: y0, y1: y1 };
+}
+function minRect(h) {
+  var best = null, i, a, b, r;
+  for (i = 0; i < h.length; i++) { a = h[i]; b = h[(i + 1) % h.length]; r = rectAt(h, Math.atan2(b[1] - a[1], b[0] - a[0])); if (!best || r.area < best.area) best = r; }
+  return best;
+}
+function corners(r) {
+  var c = Math.cos(r.ang), s = Math.sin(r.ang);
+  return [[r.x0, r.y0], [r.x1, r.y0], [r.x1, r.y1], [r.x0, r.y1]].map(function (q) { return [q[0] * c - q[1] * s, q[0] * s + q[1] * c]; });
+}
+function pathShape(c, s) {
+  c.beginPath();
+  if (s.k === "line") { c.moveTo(s.a[0], s.a[1]); c.lineTo(s.b[0], s.b[1]); }
+  else if (s.k === "poly") { s.pts.forEach(function (q, i) { i ? c.lineTo(q[0], q[1]) : c.moveTo(q[0], q[1]); }); c.closePath(); }
+  else if (s.k === "circle") { c.arc(s.cx, s.cy, s.r, 0, Math.PI * 2); }
+  else if (s.k === "ellipse") { c.ellipse(s.cx, s.cy, s.rx, s.ry, s.rot, 0, Math.PI * 2); }
+}
+function iou(stroke, shape) {
+  var xs = stroke.map(function (q) { return q[0]; }), ys = stroke.map(function (q) { return q[1]; });
+  var x0 = Math.min.apply(null, xs) - 40, y0 = Math.min.apply(null, ys) - 40, bw = Math.max.apply(null, xs) - x0 + 40, bh = Math.max.apply(null, ys) - y0 + 40;
+  var sc = Math.min(1, 220 / Math.max(bw, bh)), cw = Math.max(2, Math.ceil(bw * sc)), ch = Math.max(2, Math.ceil(bh * sc));
+  function mk(draw) { var c = document.createElement("canvas"); c.width = cw; c.height = ch; var g = c.getContext("2d"); g.setTransform(sc, 0, 0, sc, -x0 * sc, -y0 * sc); g.fillStyle = "#000"; draw(g); return g.getImageData(0, 0, cw, ch).data; }
+  var A = mk(function (g) { g.beginPath(); stroke.forEach(function (q, i) { i ? g.lineTo(q[0], q[1]) : g.moveTo(q[0], q[1]); }); g.closePath(); g.fill(); });
+  var Bm = mk(function (g) { pathShape(g, shape); g.fill(); });
+  var inter = 0, uni = 0, i, a, b; for (i = 3; i < A.length; i += 4) { a = A[i] > 127; b = Bm[i] > 127; if (a && b) inter++; if (a || b) uni++; }
+  return uni ? inter / uni : 0;
+}
+function snapStroke(pts) {
+  if (pts.length < 10) return null;
+  var k = W / 960, xs = pts.map(function (q) { return q[0]; }), ys = pts.map(function (q) { return q[1]; });
+  var bw = Math.max.apply(null, xs) - Math.min.apply(null, xs), bh = Math.max.apply(null, ys) - Math.min.apply(null, ys);
+  if (Math.max(bw, bh) < 45 * k) return null;
+  var len = plen(pts, false), a = pts[0], b = pts[pts.length - 1], gap = D(a, b), i;
+  if (gap > 0.22 * len) {                                  /* open: straight line? */
+    if (gap < 60 * k) return null;
+    var dev = 0; for (i = 0; i < pts.length; i++) dev = Math.max(dev, pdist(pts[i], a, b));
+    return dev < 0.07 * gap ? { k: "line", a: a, b: b } : null;
+  }
+  var area = parea(pts), h = hull(pts), ha = parea(h);      /* closed: only convex-looking shapes */
+  if (area < 400 * k * k || ha < 1 || area / ha < 0.85) return null;
+  var hp = plen(h, true), cands = [];
+  var rs = resample(h.concat([h[0]]), 72), mx = 0, my = 0;
+  rs.forEach(function (q) { mx += q[0]; my += q[1]; }); mx /= rs.length; my /= rs.length;
+  var sxx = 0, syy = 0, sxy = 0; rs.forEach(function (q) { var dx = q[0] - mx, dy = q[1] - my; sxx += dx * dx; syy += dy * dy; sxy += dx * dy; });
+  sxx /= rs.length; syy /= rs.length; sxy /= rs.length;
+  var th = 0.5 * Math.atan2(2 * sxy, sxx - syy), c = Math.cos(th), s = Math.sin(th);
+  var v1 = sxx * c * c + 2 * sxy * c * s + syy * s * s, v2 = sxx * s * s - 2 * sxy * c * s + syy * c * c;
+  var ea = Math.sqrt(2 * Math.max(v1, 1e-6)), eb = Math.sqrt(2 * Math.max(v2, 1e-6));
+  if (Math.max(ea, eb) / Math.min(ea, eb) < 1.25) cands.push({ k: "circle", cx: mx, cy: my, r: (ea + eb) / 2 });
+  else cands.push({ k: "ellipse", cx: mx, cy: my, rx: ea, ry: eb, rot: th });
+  var sp = simplifyClosed(h, 0.04 * hp);
+  if (sp.length === 3) cands.push({ k: "poly", pts: sp });
+  else if (sp.length === 4) {
+    var r = minRect(h);
+    if (ha / r.area > 0.82) {
+      var deg = r.ang * 180 / Math.PI, q = Math.round(deg / 90);
+      if (Math.abs(deg - q * 90) < 8) r = rectAt(h, q * Math.PI / 2);
+      cands.push({ k: "poly", pts: corners(r), n: 4 });
+    } else cands.push({ k: "poly", pts: sp });
+  }
+  var best = null, bs = 0; cands.forEach(function (sh) { var v = iou(pts, sh); if (v > bs) { bs = v; best = sh; } });
+  return bs >= 0.88 ? best : null;
+}
+function shapeName(s) { return s.k === "poly" ? (s.pts.length === 3 ? "triangle" : "rectangle") : s.k; }
+
+/* ---------------- painting ---------------- */
+function addPoint(p) {
+  tctx.strokeStyle = tctx.fillStyle = P.color; tctx.lineWidth = brush; tctx.lineCap = tctx.lineJoin = "round";
+  if (P.pts.length) { var a = P.pts[P.pts.length - 1]; tctx.beginPath(); tctx.moveTo(a[0], a[1]); tctx.lineTo(p[0], p[1]); tctx.stroke(); }
+  else { tctx.beginPath(); tctx.arc(p[0], p[1], brush / 2, 0, 7); tctx.fill(); }
+  P.pts.push([p[0], p[1]]);
+}
+function finish() {
+  if (!P.pts.length) return;
+  var sh = snapOn ? snapStroke(P.pts) : null;
+  if (sh) {
+    ictx.strokeStyle = P.color; ictx.lineWidth = brush; ictx.lineCap = ictx.lineJoin = "round"; pathShape(ictx, sh); ictx.stroke();
+    say("Snapped to " + shapeName(sh));
+  } else ictx.drawImage(tmp, 0, 0);
+  tctx.clearRect(0, 0, W, H); P.pts = [];
+}
+function erase(c, r) { ictx.save(); ictx.globalCompositeOperation = "destination-out"; ictx.beginPath(); ictx.arc(c[0], c[1], r, 0, 7); ictx.fill(); ictx.restore(); }
+function clearAll() { ictx.clearRect(0, 0, W, H); tctx.clearRect(0, 0, W, H); P.pts = []; }
+function say(t, secs) { toast = t; toastUntil = performance.now() / 1000 + (secs || 1.8); }
+
+/* ---------------- captures ---------------- */
+function addCapture(blob, label, ext) {
+  var url = URL.createObjectURL(blob), el = document.createElement("div"), g = document.getElementById("gallery"), e = document.getElementById("empty");
+  if (e) e.remove();
+  el.className = "cap";
+  el.innerHTML = (ext === "png" ? '<img alt="' + label + '" src="' + url + '">' : '<video controls playsinline src="' + url + '"></video>') +
+    '<a href="' + url + '" download="air-painter-' + label + "-" + Date.now() + "." + ext + '">Download ' + label + "</a>";
+  g.insertBefore(el, g.firstChild);
+}
+function savePhoto() { cv.toBlob(function (b) { if (b) addCapture(b, "photo", "png"); }, "image/png"); flashUntil = performance.now() / 1000 + 0.25; say("Photo saved below!"); }
+function saveDrawing() {
+  var c = document.createElement("canvas"); c.width = W; c.height = H; var g = c.getContext("2d");
+  g.fillStyle = "#fff"; g.fillRect(0, 0, W, H); g.drawImage(ink, 0, 0); g.drawImage(tmp, 0, 0);
+  c.toBlob(function (b) { if (b) addCapture(b, "drawing", "png"); }, "image/png"); say("Drawing saved below!");
+}
+function toggleRec(now) {
+  if (rec) { rec.stop(); rec = null; say("Video saved below!"); return; }
+  var types = ["video/webm;codecs=vp9", "video/webm;codecs=vp8", "video/webm", "video/mp4"], mt = null, i;
+  if (typeof MediaRecorder === "undefined") { say("Recording is not supported here"); return; }
+  for (i = 0; i < types.length; i++) if (MediaRecorder.isTypeSupported(types[i])) { mt = types[i]; break; }
+  if (!mt) { say("Recording is not supported here"); return; }
+  recChunks = []; rec = new MediaRecorder(cv.captureStream(30), { mimeType: mt });
+  rec.ondataavailable = function (e) { if (e.data.size) recChunks.push(e.data); };
+  rec.onstop = function () { addCapture(new Blob(recChunks, { type: mt.split(";")[0] }), "video", mt.indexOf("mp4") > -1 ? "mp4" : "webm"); };
+  rec.start(); recStart = now;
+}
+function press(it, now, force) {
+  if (it.kind === "color") { P.color = it.color; return; }
+  if (!force) { if (now < (cooldown[it.name] || 0)) return; cooldown[it.name] = now + 0.9; }
+  if (it.kind === "shape") { snapOn = !snapOn; say(snapOn ? "Shape snap ON" : "Shape snap OFF"); }
+  else if (it.kind === "photo") wantPhoto = true;
+  else if (it.kind === "save") saveDrawing();
+  else if (it.kind === "clear") { clearAll(); say("Cleared!"); }
+  else if (it.kind === "rec") toggleRec(now);
+}
+
+/* ---------------- drawing the window ---------------- */
+function font(px, f) { return "bold " + Math.round(px) + "px " + (f || PX); }
+function pixelBtn(r, fill, label, hov, act) {
+  var x0 = r[0], y0 = r[1], w = r[2] - r[0], h = r[3] - r[1];
+  ctx.fillStyle = DEEP; ctx.fillRect(x0 + 4, y0 + 4, w, h);
+  ctx.fillStyle = fill; ctx.fillRect(x0, y0, w, h);
+  ctx.fillStyle = "rgba(255,255,255,.85)"; ctx.fillRect(x0 + 3, y0 + 3, w - 6, 2);
+  ctx.lineWidth = 2; ctx.strokeStyle = INK; ctx.strokeRect(x0, y0, w, h);
+  if (act) { ctx.lineWidth = 3; ctx.strokeStyle = "#fff"; ctx.strokeRect(x0 - 3, y0 - 3, w + 6, h + 6); }
+  if (hov) { ctx.lineWidth = 4; ctx.strokeStyle = YEL; ctx.strokeRect(x0 - 3, y0 - 3, w + 6, h + 6); }
+  if (label) {
+    var fs = Math.min(L.ih * 0.27, w / (label.length + 1.4));
+    ctx.font = font(fs); ctx.fillStyle = INK; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(label, x0 + w / 2, y0 + h / 2 + 1);
+  }
+}
+function drawUI(hoverName, now) {
+  var B = L.B, k = W / 960;
+  ctx.fillStyle = "rgba(255,179,217,.82)"; ctx.fillRect(0, 0, W, L.bar); ctx.fillRect(0, H - L.strip, W, L.strip);
+  ctx.fillStyle = DEEP; ctx.fillRect(0, L.bar, W, 3); ctx.fillRect(0, H - L.strip, W, 3);
+  L.items.forEach(function (it) {
+    var hov = it.name === hoverName;
+    if (it.kind === "color") pixelBtn(it.r, it.color, "", hov, it.color === P.color);
+    else {
+      var fill = "#fff", label = it.name;
+      if (it.kind === "shape") { fill = snapOn ? MINT : "#fff"; label = snapOn ? "SNAP ON" : "SNAP OFF"; }
+      if (it.kind === "rec" && rec) { fill = RED; label = "STOP"; }
+      pixelBtn(it.r, fill, label, hov, false);
+    }
+  });
+  var ty = H - (L.strip + B) / 2, fs = Math.max(10, 12 * Math.min(1.4, W / 960));
+  ctx.textBaseline = "middle"; ctx.fillStyle = INK; ctx.textAlign = "left"; ctx.font = font(fs * 0.85);
+  ctx.fillText("AIR PAINTER", B * 3 + 12, ty);
+  if (W >= 700) { ctx.textAlign = "right"; ctx.font = font(fs * 1.05, SANS); ctx.fillText("INDEX draw   |   2 FINGERS pick   |   PALM erase   |   FIST clear", W - B * 3 - 12, ty); }
+  if (rec) {
+    var s = Math.floor(now - recStart), t = "REC " + ("0" + Math.floor(s / 60)).slice(-2) + ":" + ("0" + (s % 60)).slice(-2);
+    ctx.textAlign = "right"; ctx.font = font(fs * 1.1, SANS); ctx.lineWidth = 3; ctx.strokeStyle = "#fff"; ctx.fillStyle = RED;
+    ctx.strokeText(t, W - B * 3 - 10, L.bar + 26 * k + 4); ctx.fillText(t, W - B * 3 - 10, L.bar + 26 * k + 4);
+    if (Math.floor(now * 2) % 2 === 0) { ctx.beginPath(); ctx.arc(W - B * 3 - 100 * k - 18, L.bar + 26 * k + 4, 8, 0, 7); ctx.fill(); }
+  }
+  ctx.lineWidth = B * 2; ctx.strokeStyle = HOT; ctx.strokeRect(0, 0, W, H);
+  ctx.lineWidth = 2; ctx.strokeStyle = "#fff"; ctx.strokeRect(B, B, W - 2 * B, H - 2 * B);
+  var c = B * 3;
+  [[0, 0, SKY], [W - c, 0, LILAC], [0, H - c, LILAC], [W - c, H - c, SKY]].forEach(function (q) {
+    ctx.fillStyle = q[2]; ctx.fillRect(q[0], q[1], c, c); ctx.lineWidth = 2; ctx.strokeStyle = INK; ctx.strokeRect(q[0] + 1, q[1] + 1, c - 2, c - 2);
+  });
+}
+
+/* ---------------- the loop ---------------- */
+function frame() {
+  requestAnimationFrame(frame);
+  var now = performance.now() / 1000, i;
+  if (camOn && video.readyState >= 2) { ctx.save(); ctx.translate(W, 0); ctx.scale(-1, 1); ctx.drawImage(video, 0, 0, W, H); ctx.restore(); }
+  else { var g = ctx.createLinearGradient(0, 0, W, H); g.addColorStop(0, "#fff7fb"); g.addColorStop(1, "#eef6ff"); ctx.fillStyle = g; ctx.fillRect(0, 0, W, H); }
+
+  hand = null; cursor = null; palm = null; var raw = null, lm = null;
+  if (camOn && landmarker && video.readyState >= 2 && video.currentTime !== lastVT) {
+    lastVT = video.currentTime;
+    try { var res = landmarker.detectForVideo(video, performance.now()); lm = res && res.landmarks && res.landmarks[0]; } catch (e) { lm = null; }
+    window.__lm = lm;
+  } else if (camOn && landmarker) lm = window.__lm;
+  if (lm && camOn) {
+    hand = lm; var rg = classify(lm); gesture = pushGesture(rg); if (gesture !== rg) gesture = "hover";
+    raw = [(1 - lm[8].x) * W, lm[8].y * H]; smooth = smooth ? [smooth[0] * 0.45 + raw[0] * 0.55, smooth[1] * 0.45 + raw[1] * 0.55] : raw;
+    cursor = [smooth[0], smooth[1]]; palm = [(1 - lm[9].x) * W, lm[9].y * H];
+  } else if (camOn) { hist = []; stable = "none"; gesture = "none"; smooth = null; }
+
+  var hov = null; if (cursor) hov = hit(cursor[0], cursor[1]);
+  if (!ptr.down) {
+    var canDraw = cursor && cursor[1] > L.bar + 6 && cursor[1] < H - L.strip - 6 && cursor[0] > L.B + 4 && cursor[0] < W - L.B - 4;
+    if (gesture === "draw" && canDraw) { if (!P.pts.length) { smooth = raw; cursor = [raw[0], raw[1]]; } addPoint(cursor); }
+    else if (P.pts.length) finish();
+  }
+  var er = W * 0.055; if (gesture === "erase" && palm) erase(palm, er);
+  progress = 0;
+  if (gesture === "clear") {
+    if (fistSince === null) fistSince = now; progress = Math.min(1, (now - fistSince) / 0.6);
+    if (progress >= 1 && !fistDone) { clearAll(); fistDone = true; say("Cleared!"); }
+  } else { fistSince = null; fistDone = false; }
+  if (gesture === "select" && hov) press(hov, now, false);
+
+  ctx.drawImage(ink, 0, 0); ctx.drawImage(tmp, 0, 0);
+  if (hand) {
+    ctx.lineWidth = 2; ctx.strokeStyle = "rgba(255,255,255,.9)";
+    CONN.forEach(function (c) { ctx.beginPath(); ctx.moveTo((1 - hand[c[0]].x) * W, hand[c[0]].y * H); ctx.lineTo((1 - hand[c[1]].x) * W, hand[c[1]].y * H); ctx.stroke(); });
+    ctx.fillStyle = HOT; hand.forEach(function (p) { ctx.beginPath(); ctx.arc((1 - p.x) * W, p.y * H, 3, 0, 7); ctx.fill(); });
+  }
+  if (cursor) {
+    ctx.lineWidth = 3;
+    if (gesture === "draw") { ctx.fillStyle = P.color; ctx.strokeStyle = "#fff"; ctx.beginPath(); ctx.arc(cursor[0], cursor[1], 10, 0, 7); ctx.fill(); ctx.stroke(); }
+    else if (gesture === "select") { ctx.strokeStyle = YEL; ctx.beginPath(); ctx.arc(cursor[0], cursor[1], 18, 0, 7); ctx.stroke(); }
+    else if (gesture === "erase" && palm) { ctx.strokeStyle = "#fff"; ctx.beginPath(); ctx.arc(palm[0], palm[1], er, 0, 7); ctx.stroke(); ctx.lineWidth = 1; ctx.strokeStyle = HOT; ctx.stroke(); }
+    else if (gesture === "clear" && progress > 0 && palm) { ctx.strokeStyle = DEEP; ctx.lineWidth = 6; ctx.beginPath(); ctx.arc(palm[0], palm[1], 30, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * progress); ctx.stroke(); }
+    else { ctx.strokeStyle = "#fff"; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(cursor[0], cursor[1], 8, 0, 7); ctx.stroke(); }
+  }
+  drawUI(hov && cursor ? hov.name : null, now);
+  if (wantPhoto) { wantPhoto = false; savePhoto(); }
+  if (now < toastUntil) {
+    ctx.font = font(Math.max(11, W * 0.014)); var tw = ctx.measureText(toast).width, bx = W / 2 - tw / 2 - 16, by = H - L.strip - 56, bh = Math.max(34, W * 0.04);
+    pixelBtn([bx, by, bx + tw + 32, by + bh], "#fff", toast, false, false);
+  }
+  if (now < flashUntil) { ctx.fillStyle = "rgba(255,255,255," + (0.8 * (flashUntil - now) / 0.25) + ")"; ctx.fillRect(0, 0, W, H); }
+}
+
+/* ---------------- mouse / touch drawing (works without a camera) ---------------- */
+function toCanvas(e) { var r = cv.getBoundingClientRect(); return [(e.clientX - r.left) * W / r.width, (e.clientY - r.top) * H / r.height]; }
+cv.addEventListener("pointerdown", function (e) {
+  var p = toCanvas(e), it = hit(p[0], p[1]), now = performance.now() / 1000;
+  if (it) { press(it, now, true); return; }
+  if (p[1] < L.bar || p[1] > H - L.strip) return;
+  ptr.down = true; cv.setPointerCapture(e.pointerId); addPoint(p);
+});
+cv.addEventListener("pointermove", function (e) { if (ptr.down) addPoint(toCanvas(e)); });
+function up() { if (ptr.down) { ptr.down = false; finish(); } }
+cv.addEventListener("pointerup", up); cv.addEventListener("pointercancel", up);
+window.addEventListener("keydown", function (e) {
+  var now = performance.now() / 1000, map = { h: "shape", p: "photo", s: "save", r: "rec", c: "clear" };
+  var it = map[e.key] && L.items.filter(function (x) { return x.kind === map[e.key]; })[0]; if (it) press(it, now, true);
+});
+
+/* ---------------- start: camera + hand tracker ---------------- */
+var cover = document.getElementById("cover"), msg = document.getElementById("msg"), startBtn = document.getElementById("start");
+document.getElementById("nocam").addEventListener("click", function () { cover.hidden = true; });
+startBtn.addEventListener("click", function () { init(); });
+async function init() {
+  startBtn.disabled = true; msg.className = ""; msg.textContent = "Loading the hand tracker (about 8 MB the first time)...";
+  try {
+    var vision = await import(VISION + "/vision_bundle.mjs");
+    var files = await vision.FilesetResolver.forVisionTasks(VISION + "/wasm");
+    var opts = function (d) { return { baseOptions: { modelAssetPath: MODEL, delegate: d }, runningMode: "VIDEO", numHands: 1, minHandDetectionConfidence: 0.6, minHandPresenceConfidence: 0.5, minTrackingConfidence: 0.5 }; };
+    try { landmarker = await vision.HandLandmarker.createFromOptions(files, opts("GPU")); }
+    catch (e) { landmarker = await vision.HandLandmarker.createFromOptions(files, opts("CPU")); }
+    msg.textContent = "Starting the camera...";
+    var stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user", width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false });
+    video.srcObject = stream; await video.play();
+    var vw = video.videoWidth || 960, vh = video.videoHeight || 540, sc = Math.min(1, 1280 / vw);
+    resize(Math.round(vw * sc), Math.round(vh * sc)); camOn = true; cover.hidden = true;
+  } catch (e) {
+    startBtn.disabled = false; msg.className = "err";
+    msg.textContent = (e && e.name === "NotAllowedError") ? "The camera was blocked. Allow it in your browser's address bar and press Start again, or draw with your mouse." : "Could not start hand tracking (" + (e && e.message ? e.message : e) + "). You can still draw with your mouse or finger.";
+  }
+}
+
+window.__air = { snapStroke: snapStroke, classify: classify, makeLayout: makeLayout, resize: resize, press: press, state: function () { return { snapOn: snapOn, color: P.color, gesture: gesture, w: W, h: H }; }, clearAll: clearAll, dbg: { iou: iou, hull: hull, parea: parea, plen: plen, simplifyClosed: simplifyClosed, minRect: minRect, corners: corners, resample: resample } };
+requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
